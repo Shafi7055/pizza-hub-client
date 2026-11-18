@@ -1,44 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-
-const menuItems = [
-  {
-    name: "The Classic Margherita",
-    category: "Classic",
-    description: "San Marzano tomato, creamy mozzarella, fresh basil.",
-    price: 14.5,
-    rating: "4.9",
-    time: "20–25 min",
-    tag: "Bestseller",
-    image:
-      "https://images.unsplash.com/photo-1579751626657-72bc17010498?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    name: "Garden Party",
-    category: "Veggie",
-    description: "Roasted peppers, red onion, olives, and basil pesto.",
-    price: 16,
-    rating: "4.8",
-    time: "25–30 min",
-    tag: "Vegetarian",
-    image:
-      "https://images.unsplash.com/photo-1571407970349-bc81e7e96d47?auto=format&fit=crop&w=900&q=85",
-  },
-  {
-    name: "Smoky Pepperoni",
-    category: "Meat",
-    description: "Cup-and-char pepperoni, hot honey, aged parmesan.",
-    price: 18.5,
-    rating: "5.0",
-    time: "20–25 min",
-    tag: "Fan favorite",
-    image:
-      "https://images.unsplash.com/photo-1628840042765-356cda07504e?auto=format&fit=crop&w=900&q=85",
-  },
-];
-
-const categories = ["All slices", "Classic", "Veggie", "Meat"];
+import Link from "next/link";
+import SiteFooter from "../components/SiteFooter";
+import SiteHeader from "../components/SiteHeader";
+import { menuCategories, menuItems } from "../lib/menu-data";
 
 function ArrowIcon() {
   return (
@@ -84,28 +50,7 @@ export default function HomePage() {
 
   return (
     <main>
-      <header className="site-header">
-        <a className="brand" href="#" aria-label="PizzaHub home">
-          <span className="brand-mark">P</span>
-          <span>pizza<span className="brand-accent">hub</span></span>
-        </a>
-        <nav className="main-nav" aria-label="Main navigation">
-          <a className="nav-active" href="#home">Home</a>
-          <a href="#menu">Our menu</a>
-          <a href="#how-it-works">How it works</a>
-        </nav>
-        <div className="header-actions">
-          <button className="bag-button" type="button" aria-label={`Shopping bag, ${cartCount} items`}>
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M5 8h14l1 12H4L5 8Z" />
-              <path d="M9 9V6a3 3 0 0 1 6 0v3" />
-            </svg>
-            <span className="bag-count">{cartCount}</span>
-          </button>
-          <a className="button button-dark header-cta" href="#menu">Order now <ArrowIcon /></a>
-          <a className="mobile-order" href="#menu">Order <ArrowIcon /></a>
-        </div>
-      </header>
+      <SiteHeader cartCount={cartCount} />
 
       <section className="hero section-wrap" id="home">
         <div className="hero-copy">
@@ -156,7 +101,7 @@ export default function HomePage() {
         </div>
         <div className="menu-toolbar">
           <div className="category-list" role="group" aria-label="Filter menu by category">
-            {categories.map((category) => (
+            {menuCategories.map((category) => (
               <button
                 className={`category-button${activeCategory === category ? " selected" : ""}`}
                 key={category}
@@ -189,7 +134,7 @@ export default function HomePage() {
                 </div>
                 <div className="card-content">
                   <div className="card-meta"><span>★ {item.rating}</span><i />{item.time}<i />{item.category}</div>
-                  <div className="card-title-row"><h3>{item.name}</h3><span className="price">${item.price.toFixed(2)}</span></div>
+                  <div className="card-title-row"><h3><Link href={`/menu/${item.id}`}>{item.name}</Link></h3><span className="price">${item.price.toFixed(2)}</span></div>
                   <p>{item.description}</p>
                   <button className="add-button" onClick={() => addToCart(item.name)} type="button">
                     Add to bag <span>+</span>
@@ -229,18 +174,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <footer className="site-footer">
-        <div className="footer-main section-wrap">
-          <div className="footer-brand">
-            <a className="brand" href="#home"><span className="brand-mark">P</span><span>pizza<span className="brand-accent">hub</span></span></a>
-            <p>Good food tastes even better<br />when it brings us together.</p>
-          </div>
-          <div className="footer-links"><span>COME HUNGRY</span><a href="#menu">Browse the menu</a><a href="#how-it-works">How it works</a><a href="#home">Our story</a></div>
-          <div className="footer-links"><span>THE GOOD STUFF</span><a href="#menu">For restaurants</a><a href="#menu">Join our team</a><a href="#menu">Get in touch</a></div>
-          <div className="footer-social"><span>FOLLOW THE CRUST</span><div><a href="#home" aria-label="Instagram">ig</a><a href="#home" aria-label="TikTok">tk</a><a href="#home" aria-label="X">x</a></div><p>Good things are happening<br />@pizzahub</p></div>
-        </div>
-        <div className="footer-bottom section-wrap"><span>© 2025 PizzaHub. Made with extra cheese.</span><div><a href="#home">Privacy</a><a href="#home">Terms</a><span>Made for pizza people <b>♥</b></span></div></div>
-      </footer>
+      <SiteFooter />
       <div className="toast" aria-live="polite" data-visible={Boolean(notice)}>{notice}</div>
     </main>
   );
