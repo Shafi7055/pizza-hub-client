@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { menuCategories, menuItems } from "../lib/menu-data";
+import { api } from "../lib/api";
 
 const locations = ["All locations", ...new Set(menuItems.map((item) => item.location))];
 
@@ -11,10 +12,26 @@ export default function MenuExplorer() {
   const [location, setLocation] = useState("All locations");
   const [query, setQuery] = useState("");
   const [sortOrder, setSortOrder] = useState("recommended");
+  const [remoteItems, setRemoteItems] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    api("/api/menu")
+      .then(({ items }) => setRemoteItems(items))
+      .catch((requestError) => {
+        setError(requestError.message);
+        setRemoteItems(menuItems);
+      })
+      .finally(() => setLoading(false));
+  }, []);
+
+  const sourceItems = remoteItems || menuItems;
+  const locations = ["All locations", ...new Set(sourceItems.map((item) => item.location))];
 
   const items = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    const filtered = menuItems.filter((item) => {
+    const filtered = sourceItems.filter((item) => {
       const matchesCategory = category === "All slices" || item.category === category;
       const matchesLocation = location === "All locations" || item.location === location;
       const matchesQuery =
@@ -28,10 +45,12 @@ export default function MenuExplorer() {
     if (sortOrder === "price-asc") return filtered.sort((a, b) => a.price - b.price);
     if (sortOrder === "price-desc") return filtered.sort((a, b) => b.price - a.price);
     return filtered;
-  }, [category, location, query, sortOrder]);
+  }, [category, location, query, sortOrder, sourceItems]);
 
   return (
     <>
+      {loading && <p className="demo-note" role="status">Loading menu items…</p>}
+      {error && <p className="demo-note" role="alert">{error} Showing the demo menu instead.</p>}
       <div className="browse-toolbar">
         <label className="search-field browse-search">
           <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6" /><path d="m13 13 4 4" /></svg>

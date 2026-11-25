@@ -1,12 +1,7 @@
-import ProfileSettingsPage from "../../components/ProfileSettingsPage";
-import PublicPageFrame from "../../components/PublicPageFrame";
+import ProfileSettingsAccess from "../../components/ProfileSettingsAccess";
 
 export const metadata = { title: "Profile settings | PizzaHub" };
 
 export default function ProfileSettingsRoute() {
-  return (
-    <PublicPageFrame>
-      <ProfileSettingsPage audience="customer" />
-    </PublicPageFrame>
-  );
+  return <ProfileSettingsAccess />;
 }

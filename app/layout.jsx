@@ -1,4 +1,5 @@
 import "./globals.css";
+import { DemoAuthProvider } from "../components/DemoAuthProvider";
 
 export const metadata = {
   title: "PizzaHub — Your next favorite slice",
@@ -7,8 +8,10 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="en" data-scroll-behavior="smooth">
+      <body>
+        <DemoAuthProvider>{children}</DemoAuthProvider>
+      </body>
     </html>
   );
 }

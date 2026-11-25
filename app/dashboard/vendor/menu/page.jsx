@@ -1,31 +1,51 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import DashboardPage from "../../../../components/DashboardPage";
 import DashboardTable from "../../../../components/DashboardTable";
-
-export const metadata = { title: "My menu items | PizzaHub" };
+import { api } from "../../../../lib/api";
 
 export default function VendorMenuPage() {
+  const [items, setItems] = useState([]);
+  const [error, setError] = useState("");
+  async function load() {
+    try { setItems((await api("/api/vendor/menu")).items); }
+    catch (requestError) { setError(requestError.message); }
+  }
+  useEffect(() => { load(); }, []);
+
+  async function toggleAvailability(item) {
+    try {
+      await api(`/api/vendor/menu/${item.id}`, { method: "PATCH", body: JSON.stringify({ availability: item.availability === "available" ? "unavailable" : "available" }) });
+      await load();
+    } catch (requestError) { setError(requestError.message); }
+  }
+
   return (
     <DashboardPage
       eyebrow="YOUR MENU"
       title="My menu items"
       description="Keep your menu fresh and see which items are available to customers."
       stats={[
-        { label: "All items", value: "3", note: "Your full menu" },
-        { label: "Active", value: "2", note: "Visible on PizzaHub" },
-        { label: "In review", value: "1", note: "Awaiting admin approval" },
+        { label: "All items", value: String(items.length), note: "Your full menu" },
+        { label: "Active", value: String(items.filter((item) => item.status === "approved" && item.availability === "available").length), note: "Visible on PizzaHub" },
+        { label: "In review", value: String(items.filter((item) => item.status === "pending").length), note: "Awaiting admin approval" },
       ]}
     >
+      {error && <p className="demo-note" role="alert">{error}</p>}
       <div className="dashboard-quick-links"><Link className="button button-orange" href="/dashboard/vendor/menu/new">+ Add menu item</Link></div>
       <DashboardTable
         title="Your menu"
         description="Only approved and active items appear in Browse Menu."
         columns={["Item", "Category", "Price", "Status", "Availability"]}
-        rows={[
-          ["The Classic Margherita", "Classic", "$14.50", <span className="status-pill accepted" key="approved">Approved</span>, "Available"],
-          ["Garden Party", "Veggie", "$16.00", <span className="status-pill accepted" key="approved">Approved</span>, "Available"],
-          ["Smoky Pepperoni", "Meat", "$18.50", <span className="status-pill pending" key="pending">Pending</span>, "Not listed"],
-        ]}
+        rows={items.map((item) => [
+          item.name,
+          item.category,
+          `$${Number(item.price).toFixed(2)}`,
+          <span className={`status-pill ${item.status}`} key={item.id}>{item.status}</span>,
+          <button className="table-action" type="button" disabled={item.status !== "approved"} onClick={() => toggleAvailability(item)}>{item.availability === "available" ? "Available" : "Unavailable"}</button>
+        ])}
       />
       <p className="demo-note">This list is illustrative and does not create, update, or delete menu data.</p>
     </DashboardPage>

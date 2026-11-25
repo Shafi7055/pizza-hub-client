@@ -1,8 +1,61 @@
+"use client";
+
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { demoRoleDetails, demoUsers, getDemoSignInDestination } from "../lib/demo-users";
+import { useDemoAuth } from "./DemoAuthProvider";
 import PublicPageFrame from "./PublicPageFrame";
 
 export default function AuthPage({ mode }) {
   const isSignUp = mode === "sign-up";
+  const router = useRouter();
+  const { signInAs, login, register, user, ready } = useDemoAuth();
+  const [choosingRole, setChoosingRole] = useState(false);
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "customer", image: "" });
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (!isSignUp && !choosingRole && ready && user) {
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      router.replace(getDemoSignInDestination(user.role, requestedPath));
+    }
+  }, [choosingRole, isSignUp, ready, router, user]);
+
+  async function handleDemoSignIn(role) {
+    setChoosingRole(true);
+    setError("");
+    try {
+      const authenticatedUser = await signInAs(role);
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      router.push(getDemoSignInDestination(authenticatedUser.role, requestedPath));
+    } catch (requestError) {
+      setError(requestError.message);
+      setChoosingRole(false);
+    }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    setSubmitting(true);
+    try {
+      const authenticatedUser = isSignUp
+        ? await register({ name: form.name, email: form.email, password: form.password, role: form.role })
+        : await login(form.email, form.password);
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      router.push(getDemoSignInDestination(authenticatedUser.role, requestedPath));
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function updateForm(event) {
+    setForm((current) => ({ ...current, [event.target.name]: event.target.value }));
+  }
 
   return (
     <PublicPageFrame>
@@ -11,28 +64,57 @@ export default function AuthPage({ mode }) {
           <div className="eyebrow"><span className="eyebrow-dot" /> {isSignUp ? "COME ON IN" : "GOOD TO SEE YOU"}</div>
           <h1>{isSignUp ? <>Good pizza.<br />Good <span>people.</span></> : <>Welcome<br /><span>back.</span></>}</h1>
           <p>{isSignUp ? "Create your PizzaHub account to find local favorites or bring your restaurant to the neighborhood." : "Sign in to pick up where you left off and get back to the good stuff."}</p>
-          <div className="auth-note"><span>✳</span><p>Authentication will be connected in a later implementation step. This form is a visual route placeholder.</p></div>
+          <div className="auth-note"><span>✳</span><p>{isSignUp ? "Create a customer or restaurant account, or use a demo role to explore the platform." : "Sign in with your account or choose a seeded demo role."}</p></div>
         </div>
         <section className="auth-card">
-          <div className="auth-card-heading"><h2>{isSignUp ? "Create your account" : "Sign in to PizzaHub"}</h2><p>{isSignUp ? "It only takes a minute." : "Your next favorite slice is waiting."}</p></div>
-          <fieldset className="demo-fieldset" disabled>
-            {isSignUp && <label>Full name<input autoComplete="name" placeholder="Your name" /></label>}
-            <label>Email address<input autoComplete="email" placeholder="you@example.com" type="email" /></label>
-            <label>Password<input autoComplete={isSignUp ? "new-password" : "current-password"} placeholder="At least 6 characters" type="password" /></label>
-            {isSignUp && (
-              <>
-                <label>Profile image (optional)<input accept="image/*" type="file" /></label>
-                <label>Account type
-                  <select defaultValue="customer">
-                    <option value="customer">Customer</option>
-                    <option value="vendor">Restaurant owner</option>
-                  </select>
-                </label>
-              </>
-            )}
-            <button className="button button-orange auth-submit" type="button">{isSignUp ? "Create account" : "Sign in"} <span>→</span></button>
-            <button className="google-button" type="button">Continue with Google</button>
-          </fieldset>
+          <div className="auth-card-heading">
+            <h2>{isSignUp ? "Create your account" : "Try a demo role"}</h2>
+            <p>{isSignUp ? "Create your PizzaHub account." : "Sign in or choose a sample account."}</p>
+          </div>
+          {isSignUp ? (
+            <form onSubmit={handleSubmit}>
+            <fieldset className="demo-fieldset">
+              <label>Full name<input name="name" value={form.name} onChange={updateForm} autoComplete="name" placeholder="Your name" required /></label>
+              <label>Email address<input name="email" value={form.email} onChange={updateForm} autoComplete="email" placeholder="you@example.com" type="email" required /></label>
+              <label>Password<input name="password" value={form.password} onChange={updateForm} autoComplete="new-password" placeholder="At least 6 characters" type="password" minLength="6" required /></label>
+              <label>Profile image (optional)<input accept="image/*" type="file" /></label>
+              <label>Account type
+                <select name="role" value={form.role} onChange={updateForm}>
+                  <option value="customer">Customer</option>
+                  <option value="vendor">Restaurant owner</option>
+                </select>
+              </label>
+              {error && <p className="demo-note" role="alert">{error}</p>}
+              <button className="button button-orange auth-submit" type="submit" disabled={submitting}>{submitting ? "Creating account…" : "Create account"} <span>→</span></button>
+            </fieldset>
+            </form>
+          ) : (
+            <div>
+              <form className="demo-fieldset" onSubmit={handleSubmit}>
+                <label>Email address<input name="email" value={form.email} onChange={updateForm} type="email" autoComplete="email" required /></label>
+                <label>Password<input name="password" value={form.password} onChange={updateForm} type="password" autoComplete="current-password" required /></label>
+                {error && <p className="demo-note" role="alert">{error}</p>}
+                <button className="button button-orange auth-submit" type="submit" disabled={submitting}>{submitting ? "Signing in…" : "Sign in"} <span>→</span></button>
+              </form>
+              <div className="demo-role-list">
+              {Object.entries(demoRoleDetails).map(([role, details]) => {
+                const user = demoUsers[role];
+                return (
+                  <button className="demo-role-card" key={role} onClick={() => handleDemoSignIn(role)} type="button" disabled={choosingRole}>
+                    <span className={`demo-role-icon ${role}`}>{details.icon}</span>
+                    <span className="demo-role-info">
+                      <strong>{details.label}</strong>
+                      <small>{details.description}</small>
+                      <small className="demo-role-email">{user.email}</small>
+                    </span>
+                    <span className="demo-role-arrow" aria-hidden="true">→</span>
+                  </button>
+                );
+              })}
+              <p className="demo-session-hint">No password needed · Sample data only</p>
+              </div>
+            </div>
+          )}
           <p className="auth-switch">{isSignUp ? "Already have an account?" : "New to PizzaHub?"} <Link href={isSignUp ? "/sign-in" : "/sign-up"}>{isSignUp ? "Sign in" : "Create an account"}</Link></p>
         </section>
       </section>
