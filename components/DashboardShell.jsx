@@ -40,6 +40,7 @@ export default function DashboardShell({ role, children }) {
   const router = useRouter();
   const { user, ready, signOut } = useDemoAuth();
   const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState("");
   const links = dashboardLinks[role];
 
   useEffect(() => {
@@ -62,10 +63,16 @@ export default function DashboardShell({ role, children }) {
     );
   }
 
-  function handleSignOut() {
+  async function handleSignOut() {
     setSigningOut(true);
-    signOut();
-    router.replace("/sign-in");
+    setSignOutError("");
+    try {
+      await signOut();
+      router.replace("/sign-in");
+    } catch (error) {
+      setSignOutError(error.message);
+      setSigningOut(false);
+    }
   }
 
   return (
@@ -102,6 +109,7 @@ export default function DashboardShell({ role, children }) {
             </Link>
             <button className="dashboard-signout" onClick={handleSignOut} type="button">Sign out</button>
           </div>
+          {signOutError && <p role="alert">{signOutError}</p>}
         </header>
         <main className="dashboard-content">{children}</main>
       </div>

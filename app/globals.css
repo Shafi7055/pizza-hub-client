@@ -20,7 +20,7 @@
 }
 
 * { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: clip; }
 body { margin: 0; background: var(--cream); color: var(--ink); font-family: "DM Sans", sans-serif; -webkit-font-smoothing: antialiased; }
 button, input { font: inherit; }
 button, a { -webkit-tap-highlight-color: transparent; }
@@ -405,6 +405,7 @@ h1, h2, h3, p { margin-top: 0; }
 .row-actions button:disabled, .table-action:disabled { cursor: not-allowed; opacity: .55; }
 .demo-note { margin: 12px 0; color: #969084; font-size: 9px; line-height: 1.6; }
 .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding: 0 16px 16px; }
+.profile-image-preview { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
 .form-span { grid-column: 1 / -1; }
 .form-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 0 16px 16px; }
 .form-actions .button { min-height: 36px; font-size: 9px; }

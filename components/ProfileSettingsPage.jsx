@@ -10,6 +10,7 @@ export default function ProfileSettingsPage({ audience }) {
   const profileAudience = user?.role || audience;
   const [form, setForm] = useState({ name: "", image: "", businessName: "" });
   const [status, setStatus] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -27,6 +28,25 @@ export default function ProfileSettingsPage({ audience }) {
     }
   }
 
+  async function uploadProfileImage(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setStatus("");
+    setUploadingImage(true);
+    try {
+      const body = new FormData();
+      body.append("image", file);
+      const { image } = await api("/api/vendor/profile/image", { method: "POST", body });
+      setForm((current) => ({ ...current, image }));
+      setStatus("Profile image uploaded.");
+    } catch (error) {
+      setStatus(error.message);
+    } finally {
+      setUploadingImage(false);
+    }
+  }
+
   return (
     <DashboardPage
       eyebrow="YOUR ACCOUNT"
@@ -35,7 +55,7 @@ export default function ProfileSettingsPage({ audience }) {
     >
       <section className="dashboard-panel">
         <div className="panel-heading">
-          <div><h2>Personal information</h2><p>Profile editing will be connected when authentication and the API are implemented.</p></div>
+          <div><h2>Personal information</h2><p>Update your details and profile image.</p></div>
         </div>
         <form onSubmit={save}>
         <fieldset className="demo-fieldset">
@@ -43,8 +63,12 @@ export default function ProfileSettingsPage({ audience }) {
             <label>Full name<input value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label>
             <label>Email address<input defaultValue={user?.email || ""} type="email" disabled /></label>
             {profileAudience === "vendor" && <label>Restaurant name<input value={form.businessName} onChange={(event) => setForm((current) => ({ ...current, businessName: event.target.value }))} /></label>}
-            <label>Profile image URL<input value={form.image} onChange={(event) => setForm((current) => ({ ...current, image: event.target.value }))} /></label>
+            <label>Profile image (PNG, JPG or WebP; max 5 MB)
+              <input accept="image/png,image/jpeg,image/webp,image/gif" disabled={uploadingImage} onChange={uploadProfileImage} type="file" />
+              {form.image && <img className="profile-image-preview" src={form.image} alt="Current profile" />}
+            </label>
           </div>
+          {uploadingImage && <p className="demo-note" role="status">Uploading image…</p>}
           <button className="button button-orange" type="submit">Save changes</button>
         </fieldset>
         {status && <p className="demo-note" role="status">{status}</p>}

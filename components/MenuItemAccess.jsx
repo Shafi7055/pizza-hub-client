@@ -7,28 +7,81 @@ import { useDemoAuth } from "./DemoAuthProvider";
 import { api } from "../lib/api";
 import PublicPageFrame from "./PublicPageFrame";
 
-export default function MenuItemAccess({ item }) {
+function localDateTimeMinimum() {
+  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
+    .toISOString()
+    .slice(0, 16);
+}
+
+export default function MenuItemAccess({ itemId }) {
   const router = useRouter();
   const { user, ready } = useDemoAuth();
+  const [item, setItem] = useState(null);
+  const [itemLoading, setItemLoading] = useState(true);
+  const [itemError, setItemError] = useState("");
   const [notice, setNotice] = useState("");
   const [orderOpen, setOrderOpen] = useState(false);
   const [order, setOrder] = useState({ deliveryDate: "", address: "", message: "" });
   const [submitting, setSubmitting] = useState(false);
   const [favorite, setFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [reviewError, setReviewError] = useState("");
   const [review, setReview] = useState({ rating: "5", comment: "" });
 
   useEffect(() => {
-    api(`/api/reviews/${item.id}`)
-      .then(({ reviews: itemReviews }) => setReviews(itemReviews))
-      .catch(() => setReviews([]));
-  }, [item.id]);
+    let active = true;
+    setItemLoading(true);
+    setItem(null);
+    setItemError("");
+    api(`/api/menu/${encodeURIComponent(itemId)}`)
+      .then(({ item: menuItem }) => {
+        if (active) setItem(menuItem);
+      })
+      .catch((requestError) => {
+        if (active) setItemError(requestError.message);
+      })
+      .finally(() => {
+        if (active) setItemLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [itemId]);
 
   useEffect(() => {
-    if (ready && !user) {
-      router.replace(`/sign-in?next=/menu/${item.id}`);
+    if (ready && !user) router.replace(`/sign-in?next=/menu/${itemId}`);
+  }, [itemId, ready, router, user]);
+
+  useEffect(() => {
+    if (!item) return;
+    let active = true;
+    api(`/api/reviews/${item.id}`)
+      .then(({ reviews: itemReviews }) => {
+        if (active) setReviews(itemReviews);
+      })
+      .catch((requestError) => {
+        if (active) setReviewError(requestError.message);
+      });
+    if (user?.role === "customer") {
+      setFavoriteLoading(true);
+      api("/api/favorites")
+        .then(({ items }) => {
+          if (active) setFavorite(items.some((entry) => entry.id === item.id));
+        })
+        .catch((requestError) => {
+          if (active) setNotice(requestError.message);
+        })
+        .finally(() => {
+          if (active) setFavoriteLoading(false);
+        });
+    } else {
+      setFavoriteLoading(false);
     }
-  }, [item.id, ready, router, user]);
+    return () => {
+      active = false;
+    };
+  }, [item, user]);
 
   if (!ready || !user) {
     return (
@@ -39,14 +92,46 @@ export default function MenuItemAccess({ item }) {
     );
   }
 
+  if (itemLoading) {
+    return (
+      <main className="role-check" aria-live="polite">
+        <span className="role-check-spinner" />
+        <strong>Loading menu item…</strong>
+      </main>
+    );
+  }
+
+  if (itemError || !item) {
+    return (
+      <PublicPageFrame>
+        <div className="empty-state">
+          <span>🍕</span>
+          <h1>We couldn't find that slice.</h1>
+          <p>{itemError || "This item may no longer be available."}</p>
+          <Link className="button button-orange" href="/browse-menu">Back to the menu</Link>
+        </div>
+      </PublicPageFrame>
+    );
+  }
+
   async function submitOrder(event) {
     event.preventDefault();
+    const deliveryDate = new Date(order.deliveryDate);
+    if (!Number.isFinite(deliveryDate.getTime()) || deliveryDate.getTime() <= Date.now()) {
+      setNotice("Choose a future delivery date and time.");
+      return;
+    }
     setSubmitting(true);
     setNotice("");
     try {
       await api("/api/orders", {
         method: "POST",
-        body: JSON.stringify({ itemId: item.id, ...order })
+        body: JSON.stringify({
+          itemId: item.id,
+          deliveryDate: deliveryDate.toISOString(),
+          address: order.address,
+          message: order.message
+        })
       });
       setNotice("Order submitted. The restaurant has been notified.");
       setOrderOpen(false);
@@ -59,17 +144,21 @@ export default function MenuItemAccess({ item }) {
   }
 
   async function toggleFavorite() {
+    setFavoriteLoading(true);
     try {
       if (favorite) await api(`/api/favorites/${item.id}`, { method: "DELETE" });
       else await api(`/api/favorites/${item.id}`, { method: "POST" });
       setFavorite((current) => !current);
     } catch (requestError) {
       setNotice(requestError.message);
+    } finally {
+      setFavoriteLoading(false);
     }
   }
 
   async function submitReview(event) {
     event.preventDefault();
+    setNotice("");
     try {
       await api(`/api/reviews/${item.id}`, {
         method: "POST",
@@ -93,21 +182,21 @@ export default function MenuItemAccess({ item }) {
           <h1>{item.name}</h1>
           <div className="detail-rating"><span>★ {item.rating}</span><span>·</span><span>{item.time}</span><span>·</span><span>{item.vendor}</span></div>
           <p>{item.description} Prepared to order by {item.vendor}, one of the local kitchens on PizzaHub.</p>
-          <div className="detail-price-row"><span>Price</span><strong>${item.price.toFixed(2)}</strong></div>
-          <div className="detail-note"><span>✳</span><p>Every order is prepared fresh. Delivery options and scheduling will be available when ordering is connected.</p></div>
+          <div className="detail-price-row"><span>Price</span><strong>${Number(item.price).toFixed(2)}</strong></div>
+          <div className="detail-note"><span>✳</span><p>Choose a delivery time and address when you place your order. The restaurant will confirm it shortly.</p></div>
           {user.role === "customer" ? (
             <>
               <div className="detail-actions">
                 <button className="button button-orange detail-order" onClick={() => setOrderOpen((current) => !current)} type="button">
                   {orderOpen ? "Close order form" : "Place order"} <span>→</span>
                 </button>
-                <button className="favorite-button detail-favorite" onClick={toggleFavorite} type="button" aria-label={favorite ? "Remove from favorites" : "Add to favorites"}>
+                <button className="favorite-button detail-favorite" onClick={toggleFavorite} type="button" disabled={favoriteLoading} aria-label={favorite ? "Remove from favorites" : "Add to favorites"} aria-pressed={favorite}>
                   {favorite ? "♥" : "♡"}
                 </button>
               </div>
               {orderOpen && (
                 <form className="demo-fieldset order-form" onSubmit={submitOrder}>
-                  <label>Delivery date and time<input type="datetime-local" value={order.deliveryDate} onChange={(event) => setOrder((current) => ({ ...current, deliveryDate: event.target.value }))} required /></label>
+                  <label>Delivery date and time<input type="datetime-local" min={localDateTimeMinimum()} value={order.deliveryDate} onChange={(event) => setOrder((current) => ({ ...current, deliveryDate: event.target.value }))} required /></label>
                   <label>Delivery address<textarea value={order.address} onChange={(event) => setOrder((current) => ({ ...current, address: event.target.value }))} rows="3" required /></label>
                   <label>Special instructions<textarea value={order.message} onChange={(event) => setOrder((current) => ({ ...current, message: event.target.value }))} rows="3" /></label>
                   <button className="button button-orange" type="submit" disabled={submitting}>{submitting ? "Submitting…" : "Submit order"}</button>
@@ -124,6 +213,7 @@ export default function MenuItemAccess({ item }) {
           <p className="placeholder-caption">Signed in as {user.name}</p>
           <section className="dashboard-panel reviews-panel">
             <div className="panel-heading"><div><h2>Reviews</h2><p>{reviews.length ? `${reviews.length} customer review${reviews.length === 1 ? "" : "s"}` : "No reviews yet"}</p></div></div>
+            {reviewError && <p className="demo-note" role="alert">{reviewError}</p>}
             {reviews.map((entry) => (
               <article className="review-row" key={entry.id}><strong>{entry.customerName}</strong><span>{"★".repeat(entry.rating)}{"☆".repeat(5 - entry.rating)}</span><p>{entry.comment || "No comment"}</p></article>
             ))}

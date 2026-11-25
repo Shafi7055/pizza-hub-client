@@ -19,6 +19,7 @@ export default function SiteHeader({ cartCount = 0 }) {
   const router = useRouter();
   const { user, signOut } = useDemoAuth();
   const [theme, setTheme] = useState("light");
+  const [authError, setAuthError] = useState("");
   useEffect(() => {
     const saved = window.localStorage.getItem("pizzahub-theme");
     if (saved) {
@@ -35,9 +36,14 @@ export default function SiteHeader({ cartCount = 0 }) {
   const isHome = pathname === "/";
   const isBrowse = pathname === "/browse-menu" || pathname.startsWith("/menu/");
 
-  function handleSignOut() {
-    signOut();
-    router.push("/");
+  async function handleSignOut() {
+    setAuthError("");
+    try {
+      await signOut();
+      router.push("/");
+    } catch (error) {
+      setAuthError(error.message);
+    }
   }
 
   return (
@@ -52,6 +58,7 @@ export default function SiteHeader({ cartCount = 0 }) {
         <Link href="/#how-it-works">How it works</Link>
       </nav>
       <div className="header-actions">
+        {authError && <p role="alert">{authError}</p>}
         <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>{theme === "dark" ? "☀" : "☾"}</button>
         <Link className="bag-button" href="/browse-menu" aria-label={`Shopping bag, ${cartCount} items`}>
           <svg viewBox="0 0 24 24" aria-hidden="true">

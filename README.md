@@ -11,7 +11,7 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Use `npm run build` to create a production build and `npm start` to run it.
+Set `NEXT_PUBLIC_API_URL` in `.env.local` to the Express API origin (see `.env.example`). Use `npm run build` to create a production build and `npm start` to run it.
 
 ## Demo routes
 
@@ -22,4 +22,4 @@ Use `npm run build` to create a production build and `npm start` to run it.
 - `/dashboard/vendor/*`, `/dashboard/customer/*`, and `/dashboard/admin/*` — role-specific dashboard templates
 - `/profile-settings`, `/payment/success`, and `/payment/cancel` — account and payment route templates
 
-Use the sign-in page's demo role cards to explore seeded customer, vendor, and admin accounts. Set `NEXT_PUBLIC_API_URL` to the Express API origin. Authentication tokens are stored by the browser and every protected action is still verified by the server.
+Use the sign-in page's demo role cards to explore seeded customer, vendor, and admin accounts. Email/password sign-in uses Better Auth when MongoDB-backed auth is enabled and the local token auth otherwise. Google sign-in appears only when the OAuth credentials are configured.

@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { demoRoleDetails, demoUsers, getDemoSignInDestination } from "../lib/demo-users";
+import { api } from "../lib/api";
+import { authClient } from "../lib/auth-client";
 import { useDemoAuth } from "./DemoAuthProvider";
 import PublicPageFrame from "./PublicPageFrame";
 
@@ -15,6 +17,21 @@ export default function AuthPage({ mode }) {
   const [form, setForm] = useState({ name: "", email: "", password: "", role: "customer", image: "" });
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [googleEnabled, setGoogleEnabled] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    api("/api/auth/providers")
+      .then(({ google }) => {
+        if (active) setGoogleEnabled(google);
+      })
+      .catch((requestError) => {
+        if (active) setError(requestError.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!isSignUp && !choosingRole && ready && user) {
@@ -49,6 +66,24 @@ export default function AuthPage({ mode }) {
     } catch (requestError) {
       setError(requestError.message);
     } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setError("");
+    setSubmitting(true);
+    try {
+      window.localStorage.removeItem("pizzahub-token");
+      window.localStorage.removeItem("pizzahub-demo-role");
+      window.localStorage.removeItem("pizzahub-auth-mode");
+      const result = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: `${window.location.origin}/dashboard`,
+      });
+      if (result.error) throw new Error(result.error.message);
+    } catch (requestError) {
+      setError(requestError.message);
       setSubmitting(false);
     }
   }
@@ -96,6 +131,7 @@ export default function AuthPage({ mode }) {
                 {error && <p className="demo-note" role="alert">{error}</p>}
                 <button className="button button-orange auth-submit" type="submit" disabled={submitting}>{submitting ? "Signing in…" : "Sign in"} <span>→</span></button>
               </form>
+              {googleEnabled && <button className="button button-dark auth-submit" onClick={handleGoogleSignIn} type="button" disabled={submitting}>Continue with Google</button>}
               <div className="demo-role-list">
               {Object.entries(demoRoleDetails).map(([role, details]) => {
                 const user = demoUsers[role];
