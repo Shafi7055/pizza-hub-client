@@ -115,9 +115,9 @@ export default function HomePage() {
           <label className="search-field">
             <SearchIcon />
             <input
-              aria-label="Search pizzas"
+              aria-label="Search menu items"
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Find your slice"
+              placeholder="Find pizza or burger"
               value={search}
             />
             <span>⌘ K</span>

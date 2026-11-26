@@ -54,7 +54,7 @@ export default function MenuExplorer() {
       <div className="browse-toolbar">
         <label className="search-field browse-search">
           <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6" /><path d="m13 13 4 4" /></svg>
-          <input aria-label="Search menu items" onChange={(event) => setQuery(event.target.value)} placeholder="Search pizzas or restaurants" value={query} />
+          <input aria-label="Search menu items" onChange={(event) => setQuery(event.target.value)} placeholder="Search menu items or restaurants" value={query} />
         </label>
         <label className="select-field">
           <span>Category</span>
@@ -77,7 +77,7 @@ export default function MenuExplorer() {
           </select>
         </label>
       </div>
-      <p className="results-count">{items.length} {items.length === 1 ? "slice" : "slices"} to explore</p>
+      <p className="results-count">{items.length} {items.length === 1 ? "menu item" : "menu items"} to explore</p>
       {items.length ? (
         <div className="menu-grid">
           {items.map((item) => (
@@ -104,7 +104,7 @@ export default function MenuExplorer() {
       ) : (
         <div className="empty-state">
           <span>🍕</span>
-          <h2>No slices found just yet.</h2>
+          <h2>No menu items found just yet.</h2>
           <p>Try changing your search or filters to find another favorite.</p>
           <button type="button" onClick={() => { setCategory("All slices"); setLocation("All locations"); setQuery(""); }}>Reset filters</button>
         </div>
