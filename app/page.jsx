@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import SiteFooter from "../components/SiteFooter";
 import SiteHeader from "../components/SiteHeader";
+import { useCart } from "../components/CartProvider";
 import { menuCategories, menuItems } from "../lib/menu-data";
 
 function ArrowIcon() {
@@ -26,8 +27,8 @@ function SearchIcon() {
 export default function HomePage() {
   const [activeCategory, setActiveCategory] = useState("All slices");
   const [search, setSearch] = useState("");
-  const [cartCount, setCartCount] = useState(0);
   const [notice, setNotice] = useState("");
+  const { addItem } = useCart();
 
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -42,15 +43,15 @@ export default function HomePage() {
     });
   }, [activeCategory, search]);
 
-  function addToCart(itemName) {
-    setCartCount((count) => count + 1);
-    setNotice(`${itemName} added to your bag`);
+  function addToCart(item) {
+    addItem(item);
+    setNotice(`${item.name} added to your bag`);
     window.setTimeout(() => setNotice(""), 2400);
   }
 
   return (
     <main>
-      <SiteHeader cartCount={cartCount} />
+      <SiteHeader />
 
       <section className="hero section-wrap" id="home">
         <div className="hero-copy">
@@ -136,7 +137,7 @@ export default function HomePage() {
                   <div className="card-meta"><span>★ {item.rating}</span><i />{item.time}<i />{item.category}</div>
                   <div className="card-title-row"><h3><Link href={`/menu/${item.id}`}>{item.name}</Link></h3><span className="price">${item.price.toFixed(2)}</span></div>
                   <p>{item.description}</p>
-                  <button className="add-button" onClick={() => addToCart(item.name)} type="button">
+                  <button className="add-button" onClick={() => addToCart(item)} type="button">
                     Add to bag <span>+</span>
                   </button>
                 </div>

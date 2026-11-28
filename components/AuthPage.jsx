@@ -77,9 +77,13 @@ export default function AuthPage({ mode }) {
       window.localStorage.removeItem("pizzahub-token");
       window.localStorage.removeItem("pizzahub-demo-role");
       window.localStorage.removeItem("pizzahub-auth-mode");
+      const requestedPath = new URLSearchParams(window.location.search).get("next");
+      const callbackURL = requestedPath
+        ? `${window.location.origin}/sign-in?next=${encodeURIComponent(requestedPath)}`
+        : window.location.origin;
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: `${window.location.origin}/dashboard`,
+        callbackURL,
       });
       if (result.error) throw new Error(result.error.message);
     } catch (requestError) {
@@ -124,7 +128,7 @@ export default function AuthPage({ mode }) {
             </fieldset>
             </form>
           ) : (
-            <div>
+            <div className="sign-in-options">
               <form className="demo-fieldset" onSubmit={handleSubmit}>
                 <label>Email address<input name="email" value={form.email} onChange={updateForm} type="email" autoComplete="email" required /></label>
                 <label>Password<input name="password" value={form.password} onChange={updateForm} type="password" autoComplete="current-password" required /></label>

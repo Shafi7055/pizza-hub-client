@@ -26,6 +26,9 @@ export default function MenuItemAccess({ itemId }) {
   const [favorite, setFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
+  const [itemAverage, setItemAverage] = useState(null);
+  const [restaurantAverage, setRestaurantAverage] = useState(null);
+  const [restaurantReviewCount, setRestaurantReviewCount] = useState(0);
   const [reviewError, setReviewError] = useState("");
   const [review, setReview] = useState({ rating: "5", comment: "" });
 
@@ -57,8 +60,13 @@ export default function MenuItemAccess({ itemId }) {
     if (!item) return;
     let active = true;
     api(`/api/reviews/${item.id}`)
-      .then(({ reviews: itemReviews }) => {
-        if (active) setReviews(itemReviews);
+      .then(({ reviews: itemReviews, average, restaurantAverage: vendorAverage, restaurantReviewCount: vendorReviewCount }) => {
+        if (active) {
+          setReviews(itemReviews);
+          setItemAverage(average);
+          setRestaurantAverage(vendorAverage);
+          setRestaurantReviewCount(vendorReviewCount);
+        }
       })
       .catch((requestError) => {
         if (active) setReviewError(requestError.message);
@@ -167,6 +175,9 @@ export default function MenuItemAccess({ itemId }) {
       setNotice("Review submitted.");
       const result = await api(`/api/reviews/${item.id}`);
       setReviews(result.reviews);
+      setItemAverage(result.average);
+      setRestaurantAverage(result.restaurantAverage);
+      setRestaurantReviewCount(result.restaurantReviewCount);
     } catch (requestError) {
       setNotice(requestError.message);
     }
@@ -180,7 +191,13 @@ export default function MenuItemAccess({ itemId }) {
         <div className="detail-copy">
           <div className="eyebrow"><span className="eyebrow-dot" /> {item.category.toUpperCase()} · {item.location.toUpperCase()}</div>
           <h1>{item.name}</h1>
-          <div className="detail-rating"><span>★ {item.rating}</span><span>·</span><span>{item.time}</span><span>·</span><span>{item.vendor}</span></div>
+          <div className="detail-rating">
+            <span>★ {itemAverage ? itemAverage.toFixed(1) : item.rating}</span>
+            <span>·</span>
+            <span>{item.time}</span>
+            <span>·</span>
+            <span>{item.vendor} {restaurantAverage ? `★ ${restaurantAverage.toFixed(1)} (${restaurantReviewCount})` : "★ New"}</span>
+          </div>
           <p>{item.description} Prepared to order by {item.vendor}, one of the local kitchens on PizzaHub.</p>
           <div className="detail-price-row"><span>Price</span><strong>${Number(item.price).toFixed(2)}</strong></div>
           <div className="detail-note"><span>✳</span><p>Choose a delivery time and address when you place your order. The restaurant will confirm it shortly.</p></div>

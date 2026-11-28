@@ -70,7 +70,7 @@ export default function AdminTransactions() {
           <p>Subscription payment records will appear here when available.</p>
         </div>
       )}
-      <p className="demo-note">Stripe Checkout is not configured, so new subscriptions cannot be purchased in this demo.</p>
+      <p className="demo-note">Payment records are added after Stripe webhook signatures are verified.</p>
     </DashboardPage>
   );
 }

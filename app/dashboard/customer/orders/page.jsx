@@ -47,7 +47,7 @@ export default function CustomerOrdersPage() {
           description="Pending orders can be cancelled before the restaurant accepts them."
           columns={["Item", "Restaurant", "Delivery date", "Address", "Status", "Action"]}
           rows={orders.map((order) => [
-            order.itemName,
+            `${order.itemName}${order.quantity > 1 ? ` × ${order.quantity}` : ""}`,
             order.restaurant,
             formatDeliveryDate(order.deliveryDate),
             order.address,

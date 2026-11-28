@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { menuCategories, menuItems } from "../lib/menu-data";
 import { api } from "../lib/api";
+import { useCart } from "./CartProvider";
 
 const locations = ["All locations", ...new Set(menuItems.map((item) => item.location))];
 
@@ -15,6 +16,8 @@ export default function MenuExplorer() {
   const [remoteItems, setRemoteItems] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const { addItem } = useCart();
 
   useEffect(() => {
     api("/api/menu")
@@ -47,10 +50,16 @@ export default function MenuExplorer() {
     return filtered;
   }, [category, location, query, sortOrder, sourceItems]);
 
+  function addToCart(item) {
+    addItem(item);
+    setNotice(`${item.name} added to your bag`);
+  }
+
   return (
     <>
       {loading && <p className="demo-note" role="status">Loading menu items…</p>}
       {error && <p className="demo-note" role="alert">{error} Showing the demo menu instead.</p>}
+      {notice && <p className="demo-note" role="status">{notice}</p>}
       <div className="browse-toolbar">
         <label className="search-field browse-search">
           <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.7" cy="8.7" r="5.6" /><path d="m13 13 4 4" /></svg>
@@ -97,6 +106,9 @@ export default function MenuExplorer() {
                   <span>{item.vendor}</span>
                   <Link className="details-link" href={`/menu/${item.id}`}>View details <span>↗</span></Link>
                 </div>
+                <button className="add-button browse-add-button" type="button" onClick={() => addToCart(item)}>
+                  Add to bag <span>+</span>
+                </button>
               </div>
             </article>
           ))}

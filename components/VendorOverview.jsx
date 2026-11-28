@@ -72,7 +72,7 @@ export default function VendorOverview() {
           description="The latest requests for your restaurant."
           columns={["Item", "Customer", "Delivery", "Status"]}
           rows={recentOrders.map((order) => [
-            order.itemName,
+            `${order.itemName}${order.quantity > 1 ? ` × ${order.quantity}` : ""}`,
             order.customerName,
             formatDeliveryDate(order.deliveryDate),
             <span className={`status-pill ${order.status}`} key={order.id}>{order.status}</span>,

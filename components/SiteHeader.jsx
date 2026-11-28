@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getDashboardPath } from "../lib/demo-users";
 import { useDemoAuth } from "./DemoAuthProvider";
+import { useCart } from "./CartProvider";
 
 function ArrowIcon() {
   return (
@@ -14,10 +15,11 @@ function ArrowIcon() {
   );
 }
 
-export default function SiteHeader({ cartCount = 0 }) {
+export default function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useDemoAuth();
+  const { itemCount } = useCart();
   const [theme, setTheme] = useState("light");
   const [authError, setAuthError] = useState("");
   useEffect(() => {
@@ -60,12 +62,12 @@ export default function SiteHeader({ cartCount = 0 }) {
       <div className="header-actions">
         {authError && <p role="alert">{authError}</p>}
         <button className="theme-toggle" type="button" onClick={toggleTheme} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}>{theme === "dark" ? "☀" : "☾"}</button>
-        <Link className="bag-button" href="/browse-menu" aria-label={`Shopping bag, ${cartCount} items`}>
+        <Link className="bag-button" href="/cart" aria-label={`Shopping bag, ${itemCount} items`}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M5 8h14l1 12H4L5 8Z" />
             <path d="M9 9V6a3 3 0 0 1 6 0v3" />
           </svg>
-          <span className="bag-count">{cartCount}</span>
+          <span className="bag-count">{itemCount}</span>
         </Link>
         {user ? (
           <div className="header-account">

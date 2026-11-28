@@ -56,7 +56,7 @@ export default function VendorOrdersPage() {
           columns={["Customer", "Item", "Delivery date", "Address", "Status", "Action"]}
           rows={orders.map((order) => [
             order.customerName,
-            order.itemName,
+            `${order.itemName}${order.quantity > 1 ? ` × ${order.quantity}` : ""}`,
             formatDeliveryDate(order.deliveryDate),
             order.address,
             <span className={`status-pill ${order.status}`} key={order.id}>{order.status}</span>,
