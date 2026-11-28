@@ -24,6 +24,7 @@ export default function MenuItemAccess({ itemId }) {
   const [restaurantReviewCount, setRestaurantReviewCount] = useState(0);
   const [reviewError, setReviewError] = useState("");
   const [review, setReview] = useState({ rating: "5", comment: "" });
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -130,7 +131,9 @@ export default function MenuItemAccess({ itemId }) {
 
   async function submitReview(event) {
     event.preventDefault();
+    if (reviewSubmitting) return;
     setNotice("");
+    setReviewSubmitting(true);
     try {
       await api(`/api/reviews/${item.id}`, {
         method: "POST",
@@ -144,6 +147,8 @@ export default function MenuItemAccess({ itemId }) {
       setRestaurantReviewCount(result.restaurantReviewCount);
     } catch (requestError) {
       setNotice(requestError.message);
+    } finally {
+      setReviewSubmitting(false);
     }
   }
 
@@ -196,10 +201,10 @@ export default function MenuItemAccess({ itemId }) {
               <article className="review-row" key={entry.id}><strong>{entry.customerName}</strong><span>{"★".repeat(entry.rating)}{"☆".repeat(5 - entry.rating)}</span><p>{entry.comment || "No comment"}</p></article>
             ))}
             {user.role === "customer" && (
-              <form className="demo-fieldset" onSubmit={submitReview}>
+              <form className="demo-fieldset" onSubmit={submitReview} aria-busy={reviewSubmitting}>
                 <label>Rating<select value={review.rating} onChange={(event) => setReview((current) => ({ ...current, rating: event.target.value }))}><option value="5">5 - Excellent</option><option value="4">4 - Good</option><option value="3">3 - Average</option><option value="2">2 - Poor</option><option value="1">1 - Very poor</option></select></label>
-                <label>Comment<textarea value={review.comment} onChange={(event) => setReview((current) => ({ ...current, comment: event.target.value }))} rows="3" /></label>
-                <button className="button button-dark" type="submit">Submit review</button>
+                <label>Comment<textarea maxLength={1000} value={review.comment} onChange={(event) => setReview((current) => ({ ...current, comment: event.target.value }))} rows="3" /></label>
+                <button className="button button-dark" type="submit" disabled={reviewSubmitting}>{reviewSubmitting ? "Submitting…" : "Submit review"}</button>
               </form>
             )}
           </section>
