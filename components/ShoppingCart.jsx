@@ -130,11 +130,11 @@ export default function ShoppingCart() {
                 </label>
                 <label>
                   Delivery address
-                  <textarea required rows="3" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Street, city, apartment or suite" />
+                  <textarea required maxLength={500} rows="3" value={address} onChange={(event) => setAddress(event.target.value)} placeholder="Street, city, apartment or suite" />
                 </label>
                 <label>
                   Notes for the restaurant <span className="optional-label">Optional</span>
-                  <textarea rows="2" value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Anything they should know?" />
+                  <textarea maxLength={500} rows="2" value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Anything they should know?" />
                 </label>
                 <button className="button button-orange cart-submit" type="submit" disabled={submitting}>
                   {submitting ? "Opening secure checkout…" : "Continue to payment"} <span>→</span>
