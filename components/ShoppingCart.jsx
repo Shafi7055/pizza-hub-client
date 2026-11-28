@@ -20,12 +20,11 @@ function getMinimumDeliveryTime() {
 export default function ShoppingCart() {
   const router = useRouter();
   const { user, ready: authReady } = useDemoAuth();
-  const { items, ready: cartReady, itemCount, setQuantity, removeItem, clearCart } = useCart();
+  const { items, ready: cartReady, itemCount, setQuantity, removeItem } = useCart();
   const [deliveryDate, setDeliveryDate] = useState("");
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
   const [notice, setNotice] = useState("");
-  const [completed, setCompleted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
 
@@ -42,7 +41,7 @@ export default function ShoppingCart() {
     setSubmitting(true);
     setNotice("");
     try {
-      const { orders } = await api("/api/orders/checkout", {
+      const { url } = await api("/api/orders/checkout", {
         method: "POST",
         body: JSON.stringify({
           items: items.map((item) => ({ itemId: item.id, quantity: item.quantity })),
@@ -51,9 +50,7 @@ export default function ShoppingCart() {
           message,
         }),
       });
-      clearCart();
-      setCompleted(true);
-      setNotice(`${orders.length} ${orders.length === 1 ? "item is" : "items are"} now awaiting restaurant confirmation.`);
+      window.location.assign(url);
     } catch (error) {
       setNotice(error.message);
     } finally {
@@ -73,18 +70,14 @@ export default function ShoppingCart() {
         <p>Review your picks and get them on their way.</p>
       </div>
 
-      {notice && <p className={completed ? "cart-notice cart-success" : "cart-notice"} role={completed ? "status" : "alert"}>{notice}</p>}
+      {notice && <p className="cart-notice" role="alert">{notice}</p>}
 
       {items.length === 0 ? (
         <div className="cart-empty">
           <span aria-hidden="true">♨</span>
-          <h2>{completed ? "Order placed" : "Your bag is taking a break"}</h2>
-          <p>{completed ? "Your restaurant will review the order shortly." : "Find a favorite slice and it will show up here."}</p>
-          {completed && user?.role === "customer" ? (
-            <Link className="button button-dark" href="/dashboard/customer/orders">View my orders</Link>
-          ) : (
-            <Link className="button button-dark" href="/browse-menu">Browse the menu <span>→</span></Link>
-          )}
+          <h2>Your bag is taking a break</h2>
+          <p>Find a favorite slice and it will show up here.</p>
+          <Link className="button button-dark" href="/browse-menu">Browse the menu <span>→</span></Link>
         </div>
       ) : (
         <div className="cart-layout">
@@ -121,7 +114,7 @@ export default function ShoppingCart() {
             <h2>Order summary</h2>
             <div className="cart-summary-row"><span>Items ({itemCount})</span><strong>{formatPrice(subtotal)}</strong></div>
             <div className="cart-summary-total"><span>Subtotal</span><strong>{formatPrice(subtotal)}</strong></div>
-            <p className="cart-summary-note">No payment is collected here. Each restaurant will confirm your order.</p>
+            <p className="cart-summary-note">Pay securely with Stripe. Your order is sent to the restaurant after payment confirmation.</p>
 
             {user?.role === "customer" ? (
               <form className="cart-checkout-form" onSubmit={submitOrder}>
@@ -144,7 +137,7 @@ export default function ShoppingCart() {
                   <textarea rows="2" value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Anything they should know?" />
                 </label>
                 <button className="button button-orange cart-submit" type="submit" disabled={submitting}>
-                  {submitting ? "Placing order…" : "Place order"} <span>→</span>
+                  {submitting ? "Opening secure checkout…" : "Continue to payment"} <span>→</span>
                 </button>
               </form>
             ) : user ? (

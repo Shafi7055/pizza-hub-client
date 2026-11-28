@@ -45,12 +45,13 @@ export default function CustomerOrdersPage() {
         <DashboardTable
           title="Your recent orders"
           description="Pending orders can be cancelled before the restaurant accepts them."
-          columns={["Item", "Restaurant", "Delivery date", "Address", "Status", "Action"]}
+          columns={["Item", "Restaurant", "Delivery date", "Address", "Payment", "Status", "Action"]}
           rows={orders.map((order) => [
             `${order.itemName}${order.quantity > 1 ? ` × ${order.quantity}` : ""}`,
             order.restaurant,
             formatDeliveryDate(order.deliveryDate),
             order.address,
+            order.paymentStatus === "paid" ? "Paid with Stripe" : "—",
             <span className={`status-pill ${order.status}`} key={order.id}>{order.status}</span>,
             order.status === "pending"
               ? <button className="table-action" type="button" onClick={() => cancelOrder(order.id)}>Cancel order</button>

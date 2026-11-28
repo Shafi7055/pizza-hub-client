@@ -6,23 +6,16 @@ import { useRouter } from "next/navigation";
 import { useDemoAuth } from "./DemoAuthProvider";
 import { api } from "../lib/api";
 import PublicPageFrame from "./PublicPageFrame";
-
-function localDateTimeMinimum() {
-  return new Date(Date.now() - new Date().getTimezoneOffset() * 60_000)
-    .toISOString()
-    .slice(0, 16);
-}
+import { useCart } from "./CartProvider";
 
 export default function MenuItemAccess({ itemId }) {
   const router = useRouter();
   const { user, ready } = useDemoAuth();
+  const { addItem } = useCart();
   const [item, setItem] = useState(null);
   const [itemLoading, setItemLoading] = useState(true);
   const [itemError, setItemError] = useState("");
   const [notice, setNotice] = useState("");
-  const [orderOpen, setOrderOpen] = useState(false);
-  const [order, setOrder] = useState({ deliveryDate: "", address: "", message: "" });
-  const [submitting, setSubmitting] = useState(false);
   const [favorite, setFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [reviews, setReviews] = useState([]);
@@ -122,35 +115,6 @@ export default function MenuItemAccess({ itemId }) {
     );
   }
 
-  async function submitOrder(event) {
-    event.preventDefault();
-    const deliveryDate = new Date(order.deliveryDate);
-    if (!Number.isFinite(deliveryDate.getTime()) || deliveryDate.getTime() <= Date.now()) {
-      setNotice("Choose a future delivery date and time.");
-      return;
-    }
-    setSubmitting(true);
-    setNotice("");
-    try {
-      await api("/api/orders", {
-        method: "POST",
-        body: JSON.stringify({
-          itemId: item.id,
-          deliveryDate: deliveryDate.toISOString(),
-          address: order.address,
-          message: order.message
-        })
-      });
-      setNotice("Order submitted. The restaurant has been notified.");
-      setOrderOpen(false);
-      setOrder({ deliveryDate: "", address: "", message: "" });
-    } catch (requestError) {
-      setNotice(requestError.message);
-    } finally {
-      setSubmitting(false);
-    }
-  }
-
   async function toggleFavorite() {
     setFavoriteLoading(true);
     try {
@@ -200,26 +164,23 @@ export default function MenuItemAccess({ itemId }) {
           </div>
           <p>{item.description} Prepared to order by {item.vendor}, one of the local kitchens on PizzaHub.</p>
           <div className="detail-price-row"><span>Price</span><strong>${Number(item.price).toFixed(2)}</strong></div>
-          <div className="detail-note"><span>✳</span><p>Choose a delivery time and address when you place your order. The restaurant will confirm it shortly.</p></div>
+          <div className="detail-note"><span>✳</span><p>Add this item to your bag, then choose a delivery time and pay securely with Stripe.</p></div>
           {user.role === "customer" ? (
-            <>
-              <div className="detail-actions">
-                <button className="button button-orange detail-order" onClick={() => setOrderOpen((current) => !current)} type="button">
-                  {orderOpen ? "Close order form" : "Place order"} <span>→</span>
-                </button>
-                <button className="favorite-button detail-favorite" onClick={toggleFavorite} type="button" disabled={favoriteLoading} aria-label={favorite ? "Remove from favorites" : "Add to favorites"} aria-pressed={favorite}>
-                  {favorite ? "♥" : "♡"}
-                </button>
-              </div>
-              {orderOpen && (
-                <form className="demo-fieldset order-form" onSubmit={submitOrder}>
-                  <label>Delivery date and time<input type="datetime-local" min={localDateTimeMinimum()} value={order.deliveryDate} onChange={(event) => setOrder((current) => ({ ...current, deliveryDate: event.target.value }))} required /></label>
-                  <label>Delivery address<textarea value={order.address} onChange={(event) => setOrder((current) => ({ ...current, address: event.target.value }))} rows="3" required /></label>
-                  <label>Special instructions<textarea value={order.message} onChange={(event) => setOrder((current) => ({ ...current, message: event.target.value }))} rows="3" /></label>
-                  <button className="button button-orange" type="submit" disabled={submitting}>{submitting ? "Submitting…" : "Submit order"}</button>
-                </form>
-              )}
-            </>
+            <div className="detail-actions">
+              <button
+                className="button button-orange detail-order"
+                onClick={() => {
+                  addItem(item);
+                  setNotice(`${item.name} added to your bag.`);
+                }}
+                type="button"
+              >
+                Add to bag <span>→</span>
+              </button>
+              <button className="favorite-button detail-favorite" onClick={toggleFavorite} type="button" disabled={favoriteLoading} aria-label={favorite ? "Remove from favorites" : "Add to favorites"} aria-pressed={favorite}>
+                {favorite ? "♥" : "♡"}
+              </button>
+            </div>
           ) : (
             <div className="role-order-note">
               <p>Ordering is available to customer accounts only.</p>

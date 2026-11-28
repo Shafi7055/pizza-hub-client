@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 
 const CART_STORAGE_KEY = "pizzahub-cart";
 const CartContext = createContext(null);
@@ -41,7 +41,7 @@ export function CartProvider({ children }) {
     if (ready) window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
   }, [items, ready]);
 
-  function addItem(item) {
+  const addItem = useCallback((item) => {
     const newItem = {
       id: String(item.id),
       name: item.name,
@@ -56,9 +56,9 @@ export function CartProvider({ children }) {
         ? current.map((entry) => entry.id === newItem.id ? { ...entry, quantity: Math.min(entry.quantity + 1, 99) } : entry)
         : [...current, newItem];
     });
-  }
+  }, []);
 
-  function setQuantity(itemId, quantity) {
+  const setQuantity = useCallback((itemId, quantity) => {
     if (!Number.isFinite(quantity)) return;
     if (quantity <= 0) {
       setItems((current) => current.filter((entry) => entry.id !== itemId));
@@ -67,15 +67,15 @@ export function CartProvider({ children }) {
     setItems((current) => current.map((entry) =>
       entry.id === itemId ? { ...entry, quantity: Math.min(Math.floor(quantity), 99) } : entry
     ));
-  }
+  }, []);
 
-  function removeItem(itemId) {
+  const removeItem = useCallback((itemId) => {
     setItems((current) => current.filter((entry) => entry.id !== itemId));
-  }
+  }, []);
 
-  function clearCart() {
+  const clearCart = useCallback(() => {
     setItems([]);
-  }
+  }, []);
 
   const itemCount = items.reduce((total, item) => total + item.quantity, 0);
 

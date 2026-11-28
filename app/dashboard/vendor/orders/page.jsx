@@ -53,12 +53,13 @@ export default function VendorOrdersPage() {
         <DashboardTable
           title="Incoming orders"
           description="Accept or reject new requests, then mark accepted orders as delivered."
-          columns={["Customer", "Item", "Delivery date", "Address", "Status", "Action"]}
+          columns={["Customer", "Item", "Delivery date", "Address", "Payment", "Status", "Action"]}
           rows={orders.map((order) => [
             order.customerName,
             `${order.itemName}${order.quantity > 1 ? ` × ${order.quantity}` : ""}`,
             formatDeliveryDate(order.deliveryDate),
             order.address,
+            order.paymentStatus === "paid" ? "Paid" : "—",
             <span className={`status-pill ${order.status}`} key={order.id}>{order.status}</span>,
             order.status === "pending"
               ? <span className="row-actions" key={`actions-${order.id}`}><button disabled={updatingId === order.id} onClick={() => updateStatus(order.id, "accepted")} type="button">Accept</button><button disabled={updatingId === order.id} onClick={() => updateStatus(order.id, "rejected")} type="button">Reject</button></span>
