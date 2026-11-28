@@ -64,6 +64,7 @@ export default function DashboardShell({ role, children }) {
   }
 
   async function handleSignOut() {
+    if (signingOut) return;
     setSigningOut(true);
     setSignOutError("");
     try {
@@ -107,7 +108,9 @@ export default function DashboardShell({ role, children }) {
               <span className="dashboard-avatar">{user.initials}</span>
               <span><strong>{user.name}</strong><small>{user.email}</small></span>
             </Link>
-            <button className="dashboard-signout" onClick={handleSignOut} type="button">Sign out</button>
+            <button className="dashboard-signout" onClick={handleSignOut} type="button" disabled={signingOut} aria-busy={signingOut}>
+              {signingOut ? "Signing out…" : "Sign out"}
+            </button>
           </div>
           {signOutError && <p role="alert">{signOutError}</p>}
         </header>
