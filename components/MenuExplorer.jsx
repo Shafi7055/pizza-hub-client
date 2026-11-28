@@ -118,7 +118,12 @@ export default function MenuExplorer() {
           <span>🍕</span>
           <h2>No menu items found just yet.</h2>
           <p>Try changing your search or filters to find another favorite.</p>
-          <button type="button" onClick={() => { setCategory("All slices"); setLocation("All locations"); setQuery(""); }}>Reset filters</button>
+          <button type="button" onClick={() => {
+            setCategory("All slices");
+            setLocation("All locations");
+            setQuery("");
+            setSortOrder("recommended");
+          }}>Reset filters</button>
         </div>
       )}
     </>
