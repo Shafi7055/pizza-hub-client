@@ -41,6 +41,7 @@ export default function AuthPage({ mode }) {
   }, [choosingRole, isSignUp, ready, router, user]);
 
   async function handleDemoSignIn(role) {
+    if (submitting || choosingRole) return;
     setChoosingRole(true);
     setError("");
     try {
@@ -55,6 +56,7 @@ export default function AuthPage({ mode }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
+    if (submitting || choosingRole) return;
     setError("");
     setSubmitting(true);
     try {
@@ -71,6 +73,7 @@ export default function AuthPage({ mode }) {
   }
 
   async function handleGoogleSignIn() {
+    if (submitting || choosingRole) return;
     setError("");
     setSubmitting(true);
     try {
@@ -124,7 +127,7 @@ export default function AuthPage({ mode }) {
                 </select>
               </label>
               {error && <p className="demo-note" role="alert">{error}</p>}
-              <button className="button button-orange auth-submit" type="submit" disabled={submitting}>{submitting ? "Creating account…" : "Create account"} <span>→</span></button>
+              <button className="button button-orange auth-submit" type="submit" disabled={submitting || choosingRole}>{submitting ? "Creating account…" : "Create account"} <span>→</span></button>
             </fieldset>
             </form>
           ) : (
@@ -133,14 +136,14 @@ export default function AuthPage({ mode }) {
                 <label>Email address<input name="email" value={form.email} onChange={updateForm} type="email" autoComplete="email" required /></label>
                 <label>Password<input name="password" value={form.password} onChange={updateForm} type="password" autoComplete="current-password" required /></label>
                 {error && <p className="demo-note" role="alert">{error}</p>}
-                <button className="button button-orange auth-submit" type="submit" disabled={submitting}>{submitting ? "Signing in…" : "Sign in"} <span>→</span></button>
+                <button className="button button-orange auth-submit" type="submit" disabled={submitting || choosingRole}>{submitting ? "Signing in…" : "Sign in"} <span>→</span></button>
               </form>
-              {googleEnabled && <button className="button button-dark auth-submit" onClick={handleGoogleSignIn} type="button" disabled={submitting}>Continue with Google</button>}
+              {googleEnabled && <button className="button button-dark auth-submit" onClick={handleGoogleSignIn} type="button" disabled={submitting || choosingRole}>Continue with Google</button>}
               <div className="demo-role-list">
               {Object.entries(demoRoleDetails).map(([role, details]) => {
                 const user = demoUsers[role];
                 return (
-                  <button className="demo-role-card" key={role} onClick={() => handleDemoSignIn(role)} type="button" disabled={choosingRole}>
+                  <button className="demo-role-card" key={role} onClick={() => handleDemoSignIn(role)} type="button" disabled={choosingRole || submitting}>
                     <span className={`demo-role-icon ${role}`}>{details.icon}</span>
                     <span className="demo-role-info">
                       <strong>{details.label}</strong>
